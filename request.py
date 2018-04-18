@@ -6,28 +6,26 @@ from headers import Headers
 
 
 class BodyReader(io.IOBase):
-    def __init__(self, sock: socket.socket,
-                 *,
-                 buff: bytes = b"",
-                 bufsize: int = 16_384):
+    def __init__(self, sock: socket.socket, *, buff: bytes = b"", bufsize: int = 16_384) -> None:
+        super().__init__()
         self._sock = sock
         self._buff = buff
-        self._buffsize = bufsize
+        self._bufsize = bufsize
 
     def readable(self) -> bool:
         return True
 
     def read(self, n: int) -> bytes:
-        """
-        Read up to n number of bytes from the request body.
+        """Read up to n number of bytes from the request body.
         """
         while len(self._buff) < n:
-            data = self._sock.recv(self._buffsize)
+            data = self._sock.recv(self._bufsize)
             if not data:
                 break
-            self._buff += data
-        res, self._buff = self._buff[:n], self._buff[n:]
 
+            self._buff += data
+
+        res, self._buff = self._buff[:n], self._buff[n:]
         return res
 
 
@@ -39,8 +37,7 @@ class Request(typing.NamedTuple):
 
     @classmethod
     def from_socket(cls, sock: socket.socket) -> "Request":
-        """
-        Read and parse the request from a socket object.
+        """Read and parse the request from a socket object.
 
         Raises:
           ValueError: When the request cannot be parsed.
@@ -58,35 +55,26 @@ class Request(typing.NamedTuple):
             raise ValueError(f"Malformed request line {request_line!r}.")
 
         headers = Headers()
-        buff = b''
+        buff = b""
         while True:
             try:
                 line = next(lines)
             except StopIteration as e:
-                # gets the rest of the buffer (maybe a body)
                 buff = e.value
                 break
 
             try:
                 name, _, value = line.decode("ascii").partition(":")
-                headers.add(name.lower(), value.lstrip())
+                headers.add(name, value.lstrip())
             except ValueError:
                 raise ValueError(f"Malformed header line {line!r}.")
 
         body = BodyReader(sock, buff=buff)
-
-        return cls(
-            method=method.upper(),
-            path=path,
-            headers=headers,
-            body=body
-        )
+        return cls(method=method.upper(), path=path, headers=headers, body=body)
 
 
-def iter_lines(sock: socket.socket,
-               bufsize: int = 16_384) -> typing.Generator[bytes, None, bytes]:
-    """
-    Given a socket, read all the individual CRLF-separated lines
+def iter_lines(sock: socket.socket, bufsize: int = 16_384) -> typing.Generator[bytes, None, bytes]:
+    """Given a socket, read all the individual CRLF-separated lines
     and yield each one until an empty one is found.  Returns the
     remainder after the empty line.
     """
@@ -103,6 +91,7 @@ def iter_lines(sock: socket.socket,
                 line, buff = buff[:i], buff[i + 2:]
                 if not line:
                     return buff
+
                 yield line
-            except Indexerror:
+            except IndexError:
                 break

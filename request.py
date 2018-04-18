@@ -1,11 +1,12 @@
+import io
 import socket
 import typing
-import io
+
 from headers import Headers
 
 
 class BodyReader(io.IOBase):
-    def __init__(self, sock: socket.socket, 
+    def __init__(self, sock: socket.socket,
                  *,
                  buff: bytes = b"",
                  bufsize: int = 16_384):
@@ -75,13 +76,14 @@ class Request(typing.NamedTuple):
         body = BodyReader(sock, buff=buff)
 
         return cls(
-                method=method.upper(),
-                path=path,
-                headers=headers,
-                body=body
-            )
+            method=method.upper(),
+            path=path,
+            headers=headers,
+            body=body
+        )
 
-def iter_lines(sock: socket.socket, 
+
+def iter_lines(sock: socket.socket,
                bufsize: int = 16_384) -> typing.Generator[bytes, None, bytes]:
     """
     Given a socket, read all the individual CRLF-separated lines

@@ -1,7 +1,7 @@
-import typing
 import io
-import socket
 import os
+import socket
+import typing
 
 from headers import Headers
 
@@ -19,12 +19,12 @@ class Response(object):
     """
 
     def __init__(
-        self,
-        status: str,
-        headers: typing.Optional[Headers] = None,
-        body: typing.Optional[typing.IO] = None,
-        content: typing.Optional[str] = None,
-        encoding: str = 'utf-8'
+            self,
+            status: str,
+            headers: typing.Optional[Headers] = None,
+            body: typing.Optional[typing.IO] = None,
+            content: typing.Optional[str] = None,
+            encoding: str = 'utf-8'
     ) -> None:
 
         self.status = status.encode()

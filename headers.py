@@ -6,7 +6,7 @@ HeadersGenerator = typing.Generator[typing.Tuple[str, str], None, None]
 
 
 class Headers(object):
-    def __init__(self)->None:
+    def __init__(self) -> None:
         self._headers = defaultdict(list)
 
     def add(self, name: str, value: str) -> None:

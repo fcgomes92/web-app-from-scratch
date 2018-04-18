@@ -2,12 +2,10 @@ import mimetypes
 import os
 import socket
 import typing
-import io
-from threading import Thread
 from queue import Queue, Empty
+from threading import Thread
 
 from request import Request
-from headers import Headers
 from response import Response
 from util import strike
 
@@ -17,7 +15,7 @@ PORT = 9000
 SERVER_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-def serve_file(sock: socket.socket, path: str)->None:
+def serve_file(sock: socket.socket, path: str) -> None:
     """
     Given a socket and the relative path to a file (relative to
     SERVER_SOCK), send that file to the socket if it exists.  If the
@@ -49,14 +47,14 @@ def serve_file(sock: socket.socket, path: str)->None:
             response.send(sock)
 
     except FileNotFoundError:
-        esponse = Response(status="404 Not Found", content="Not Found")
+        response = Response(status="404 Not Found", content="Not Found")
         response.send(sock)
         return
 
 
 def accept_connection(skt):
     client_sock, client_addr = skt.accept()
-    print(f"="*80)
+    print(f"=" * 80)
     print(f"Request from: {client_addr}")
 
     with client_sock:
@@ -70,7 +68,8 @@ def accept_connection(skt):
             response = Response(status="400 Bad Request", content="Bad request")
             response.send(client_sock)
 
-    print(f"="*80)        
+    print(f"=" * 80)
+
 
 class HTTPWorker(Thread):
     def __init__(self, connection_queue: Queue) -> None:
@@ -102,34 +101,35 @@ class HTTPWorker(Thread):
                       client_sock: socket.socket,
                       client_addr: typing.Tuple[str, int]) -> None:
         with client_sock:
-                try:
-                    request = Request.from_socket(client_sock)
-                    print(f'\t[{request.method}] {request.path}')
+            try:
+                request = Request.from_socket(client_sock)
+                print(f'\t[{request.method}] {request.path}')
 
-                    if "100-continue" in request.headers.get("expect", ""):
-                        response = Response(status="100 Continue")
-                        response.send(client_sock)
-
-                    try:
-                        content_length = int(request.headers.get("content-length", "0"))
-                    except ValueError:
-                        content_length = 0
-
-                    if content_length:
-                        body = request.body.read(content_length)
-                        print(f'\tRequest body: {body}')
-
-                    if request.method != "GET":
-                        response = Response(status="405 Method not allowed",
-                                            content="Method not allowed")
-                        return
-
-                    serve_file(client_sock, request.path)
-                except Exception as e:
-                    print(f"Failed to parse request: {e}")
-                    response = Response(status="400 Bad Request",
-                                        content="Bad request")
+                if "100-continue" in request.headers.get("expect", ""):
+                    response = Response(status="100 Continue")
                     response.send(client_sock)
+
+                try:
+                    content_length = int(request.headers.get("content-length", "0"))
+                except ValueError:
+                    content_length = 0
+
+                if content_length:
+                    body = request.body.read(content_length)
+                    print(f'\tRequest body: {body}')
+
+                if request.method != "GET":
+                    response = Response(status="405 Method not allowed",
+                                        content="Method not allowed")
+                    return
+
+                serve_file(client_sock, request.path)
+            except Exception as e:
+                print(f"Failed to parse request: {e}")
+                response = Response(status="400 Bad Request",
+                                    content="Bad request")
+                response.send(client_sock)
+
 
 class HTTPServer(object):
     def __init__(self, host='127.0.0.1', port=9000, worker_count=16) -> None:
@@ -167,6 +167,7 @@ class HTTPServer(object):
 
         for worker in workers:
             worker.join(timeout=30)
+
 
 server = HTTPServer(host=HOST, port=PORT)
 server.serve_forever()
